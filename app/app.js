@@ -114,8 +114,10 @@
   function switchView(view) {
     state.view = view;
     $all('.side-item').forEach(function (el) {
-      el.classList.toggle('active', el.dataset.view === view ||
+      // 注意:必须返回严格布尔,否则 classList.toggle(class, undefined) 会按"切换"处理(有则删、无则加),首屏会让全部项都变成 active
+      var isActive = !!(el.dataset.view === view ||
         (el.dataset.listId && view === 'todos' && el.dataset.listId === state.activeListId));
+      el.classList.toggle('active', isActive);
     });
 
     $all('.view').forEach(function (v) { v.classList.add('hidden'); });

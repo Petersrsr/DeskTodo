@@ -108,10 +108,15 @@ body[data-wp="dark"] #wallpaper {
   font-size: 13.5px;
 }
 .side-header { color: var(--text); font-weight: 600; }
-.side-item { cursor: pointer; color: var(--text); }
+.side-item { cursor: pointer; color: var(--text); position: relative; }
 .side-item.sub { padding-left: 26px; font-size: 13px; }
 .side-item:hover { background: var(--glass-hover); }
-.side-item.active { background: var(--glass-hover); }
+/* active 与 hover 视觉上区分:用莫兰迪抹茶色 + 左侧条带,避免首屏/切换时看不出哪一项是当前页 */
+.side-item.active { background: rgba(138, 166, 138, .18); color: #fff; }
+.side-item.active::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
+  background: var(--primary); border-radius: 2px;
+}
 .side-item.drag-over {
   background: var(--glass-hover);
   outline: 1.5px dashed var(--primary);
