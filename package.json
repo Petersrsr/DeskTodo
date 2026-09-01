@@ -1,11 +1,12 @@
 {
-  "name": "jarvis-ai-calendar",
-  "productName": "贾维斯 AI 桌面日历",
-  "version": "1.1.1",
-  "description": "贾维斯 AI 桌面日历 - 会提醒、会规划、会写周报的 Windows 桌面效率助手",
+  "name": "desk-todo",
+  "productName": "桌面日历",
+  "version": "1.0.0",
+  "description": "桌面日历 - 待办、日程、四象限、倒计时与 AI 助手的桌面效率工具",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dev": "electron ."
   },
   "author": "",
   "license": "MIT",

@@ -1,21 +1,23 @@
 :root {
-  --glass: rgba(18, 24, 34, .52);
-  --glass-strong: rgba(18, 24, 34, .72);
+  --glass: rgba(20, 26, 24, .52);
+  --glass-strong: rgba(20, 26, 24, .72);
   --glass-light: rgba(255, 255, 255, .10);
   --glass-hover: rgba(255, 255, 255, .14);
-  --text: #f2f5fa;
-  --text-sub: rgba(235, 240, 248, .62);
+  --text: #f0f3ee;
+  --text-sub: rgba(232, 238, 230, .62);
   --border: rgba(255, 255, 255, .14);
-  --primary: #4d8dff;
-  --green: #2fbf71;
-  --purple: #8b5cf6;
-  --rest: #ff5f5f;
-  --work: #9aa4b5;
-  --fest: #ffb35c;
-  --q1: #ff5f5f;
-  --q2: #ffa32e;
-  --q3: #2fbf71;
-  --q4: #e8edf5;
+  --primary: #8aa68a;
+  --primary-strong: #a8c5a0;
+  --primary-deep: #5d7c5d;
+  --green: #7fb069;
+  --purple: #5d7c5d;
+  --rest: #c97864;
+  --work: #a8a092;
+  --fest: #d4a574;
+  --q1: #c97864;
+  --q2: #9caf88;
+  --q3: #7fb069;
+  --q4: #b8b5a3;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,38 +32,38 @@ body {
   background: rgba(16, 21, 31, .05);
 }
 
-/* ---------- 壁纸 ---------- */
+/* ---------- 壁纸(莫兰迪抹茶) ---------- */
 #wallpaper {
   position: fixed; inset: 0; z-index: -1;
   background:
-    radial-gradient(1000px 600px at 15% 10%, #1d3a5f 0%, transparent 55%),
-    radial-gradient(900px 700px at 85% 20%, #2a5a52 0%, transparent 55%),
-    radial-gradient(1100px 800px at 55% 95%, #3a2a5f 0%, transparent 60%),
-    linear-gradient(160deg, #101823 0%, #16222f 45%, #101623 100%);
+    radial-gradient(1000px 600px at 15% 10%, #3d5a4a 0%, transparent 55%),
+    radial-gradient(900px 700px at 85% 20%, #4a6b5a 0%, transparent 55%),
+    radial-gradient(1100px 800px at 55% 95%, #2e4438 0%, transparent 60%),
+    linear-gradient(160deg, #182520 0%, #1f2f26 45%, #162119 100%);
 }
 body[data-wp="ocean"] #wallpaper {
   background:
-    radial-gradient(1000px 650px at 20% 15%, #0d4f6e 0%, transparent 55%),
-    radial-gradient(900px 700px at 80% 30%, #10617a 0%, transparent 55%),
-    radial-gradient(1100px 800px at 50% 100%, #0a3550 0%, transparent 65%),
-    linear-gradient(165deg, #071826 0%, #0b2437 50%, #071522 100%);
+    radial-gradient(1000px 650px at 20% 15%, #345c4e 0%, transparent 55%),
+    radial-gradient(900px 700px at 80% 30%, #28493a 0%, transparent 55%),
+    radial-gradient(1100px 800px at 50% 100%, #1b3326 0%, transparent 65%),
+    linear-gradient(165deg, #11201a 0%, #16302a 50%, #0e1c17 100%);
 }
 body[data-wp="sunset"] #wallpaper {
   background:
-    radial-gradient(1000px 600px at 20% 15%, #6e3a2a 0%, transparent 55%),
-    radial-gradient(900px 700px at 85% 25%, #7a3a55 0%, transparent 55%),
-    radial-gradient(1100px 800px at 50% 100%, #402038 0%, transparent 65%),
-    linear-gradient(165deg, #231018 0%, #33202a 50%, #1d1016 100%);
+    radial-gradient(1000px 600px at 20% 15%, #6a5440 0%, transparent 55%),
+    radial-gradient(900px 700px at 85% 25%, #5d4434 0%, transparent 55%),
+    radial-gradient(1100px 800px at 50% 100%, #3a2e22 0%, transparent 65%),
+    linear-gradient(165deg, #23201a 0%, #2c2720 50%, #1c1914 100%);
 }
 body[data-wp="forest"] #wallpaper {
   background:
-    radial-gradient(1000px 600px at 18% 12%, #1f4d33 0%, transparent 55%),
-    radial-gradient(900px 700px at 85% 28%, #2a5a3a 0%, transparent 55%),
-    radial-gradient(1100px 800px at 50% 100%, #14331f 0%, transparent 65%),
-    linear-gradient(165deg, #0c1a12 0%, #14261a 50%, #0b1710 100%);
+    radial-gradient(1000px 600px at 18% 12%, #355c3f 0%, transparent 55%),
+    radial-gradient(900px 700px at 85% 28%, #2a4d35 0%, transparent 55%),
+    radial-gradient(1100px 800px at 50% 100%, #1a3324 0%, transparent 65%),
+    linear-gradient(165deg, #0e1a13 0%, #142619 50%, #0b160f 100%);
 }
 body[data-wp="dark"] #wallpaper {
-  background: linear-gradient(160deg, #14171c 0%, #1a1e26 50%, #12151b 100%);
+  background: linear-gradient(160deg, #16181a 0%, #1c1e20 50%, #131517 100%);
 }
 
 /* ---------- 标题栏 ---------- */

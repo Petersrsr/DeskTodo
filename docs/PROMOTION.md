@@ -1,4 +1,4 @@
-# 贾维斯 AI 桌面日历推广计划
+# 桌面日历 推广计划
 
 目标：50 个 GitHub Star。
 
@@ -42,7 +42,7 @@
 
 ### 标题模板
 
-- 好用的 Windows 桌面日历推荐：开源免费的贾维斯 AI 桌面日历
+- 好用的 Windows 桌面日历推荐：开源免费的桌面日历
 - 我做了一个开源桌面日历：待办、农历、节假日、提醒和 AI 周报都有了
 - 桌面日程管理软件太贵？这个开源 Windows 桌面日历可以自己改
 - 免费开源的电脑桌面日历工具：支持待办清单、四象限和 AI 助手
@@ -50,18 +50,18 @@
 
 ### 博客首段模板
 
-很多桌面日历和日程管理软件看起来好用，但高级提醒、多端同步、AI 助手、桌面小组件往往需要会员。如果你只是想要一个常驻桌面的 Windows 日历，用来管理待办、日程提醒、农历节假日、倒计时和周报，其实可以试试这个开源项目：贾维斯 AI 桌面日历。它免费开源，数据本地保存，也适合想学习 Electron 桌面应用开发的人参考。
+很多桌面日历和日程管理软件看起来好用，但高级提醒、多端同步、AI 助手、桌面小组件往往需要会员。如果你只是想要一个常驻桌面的 Windows 日历，用来管理待办、日程提醒、农历节假日、倒计时和周报，其实可以试试这个开源项目：桌面日历。它免费开源，数据本地保存，也适合想学习 Electron 桌面应用开发的人参考。
 
 ## 中文短文案
 
-我做了一个 Windows 桌面效率小工具：贾维斯 AI 桌面日历。
+我做了一个 Windows 桌面效率小工具：桌面日历。
 
 它不是普通日历，而是把待办清单、月历排程、四象限、倒计时、系统提醒和 AI 助手放到一个常驻桌面窗口里。支持农历、节气、节假日，还可以配置 DeepSeek API Key 来写待办、对话和生成周报。
 
 适合每天需要安排任务、提醒事项、复盘进度的人。项目开源，正在冲 50 个 Star，喜欢的话欢迎支持一下。
 
-GitHub： https://github.com/jilmiy/jarvis-ai-calendar  
-下载： https://github.com/jilmiy/jarvis-ai-calendar/releases/tag/v1.1.1
+GitHub： https://github.com/your-name/desk-todo  
+下载： https://github.com/your-name/desk-todo/releases
 
 ## 中文短视频脚本
 
@@ -83,12 +83,12 @@ GitHub： https://github.com/jilmiy/jarvis-ai-calendar
 
 ## 英文推广文案
 
-I built Jarvis AI Desktop Calendar, a lightweight Windows productivity app that combines calendar planning, todos, Eisenhower matrix, countdowns, reminders, lunar calendar, holidays, and an AI assistant in one desktop window.
+I built DeskTodo (Desktop Calendar), a lightweight Windows productivity app that combines calendar planning, todos, Eisenhower matrix, countdowns, reminders, lunar calendar, holidays, and an AI assistant in one desktop window.
 
 It runs locally, supports Windows notifications, and can use a DeepSeek API key to help generate todos, chat about your schedule, and write weekly reports.
 
-GitHub: https://github.com/jilmiy/jarvis-ai-calendar  
-Download: https://github.com/jilmiy/jarvis-ai-calendar/releases/tag/v1.1.1
+GitHub: https://github.com/your-name/desk-todo  
+Download: https://github.com/your-name/desk-todo/releases
 
 If you like desktop productivity tools, a Star would mean a lot.
 
@@ -122,6 +122,6 @@ If you like desktop productivity tools, a Star would mean a lot.
 
 - 我做了一个会写周报的 Windows 桌面日历
 - 一个常驻桌面的 AI 日历工具，支持农历、待办、提醒和四象限
-- 开源了一个 Windows 效率小工具：贾维斯 AI 桌面日历
+- 开源了一个 Windows 效率小工具：桌面日历
 - 不想再打开一堆软件，我把日历、待办、倒计时和 AI 助手做进了一个桌面窗口
 - 适合学生和上班族的桌面日历：本地保存、系统提醒、AI 周报

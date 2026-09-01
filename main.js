@@ -2,6 +2,7 @@
  * main.js - Electron 主进程
  * 透明无边框窗口 + 系统托盘 + 置顶 + 系统通知 + 靠边自动隐藏
  * 靠边隐藏时通过前台窗口检测避免被其他软件覆盖时误弹出
+ * 集成开发态热重载:渲染端文件改动自动刷新,主/预加载改动自动重启
  */
 const { app, BrowserWindow, Tray, Menu, ipcMain, Notification, nativeImage, screen, dialog } = require('electron');
 const { spawn } = require('child_process');
@@ -49,6 +50,13 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   win.setMenu(null);
+  // 开发时可设 DESK_TODO_DEVTOOLS=1 打开 DevTools 并转发渲染端 console 到主进程 stdout
+  if (process.env.DESK_TODO_DEVTOOLS) {
+    win.webContents.openDevTools({ mode: 'detach' });
+    win.webContents.on('console-message', function (event, level, message) {
+      console.log('[renderer]', message);
+    });
+  }
 
   try {
     myHwnd = win.getNativeWindowHandle().readBigUInt64LE(0);
@@ -367,7 +375,7 @@ function createTray() {
   let icon = nativeImage.createFromPath(iconPath);
   if (icon.isEmpty()) icon = nativeImage.createEmpty();
   tray = new Tray(icon);
-  tray.setToolTip('贾维斯 AI 桌面日历');
+  tray.setToolTip('桌面日历');
   const menu = Menu.buildFromTemplate([
     { label: '显示日历', click: () => { if (edgeHidden) showFromEdge(); win.show(); win.focus(); } },
     {
@@ -390,6 +398,46 @@ function createTray() {
   tray.on('double-click', () => { if (edgeHidden) showFromEdge(); win.show(); win.focus(); });
 }
 
+// ---- 开发态热重载 ----
+// 监视渲染端文件改动 → 刷新 webContents;主进程/preload 改动 → 自动重启应用
+// 仅 Windows 下使用 fs.watch({ recursive:true });打包/生产模式下关闭
+const HOT_RELOAD_ENABLED = process.env.DESK_TODO_HOTRELOAD !== '0' && !app.isPackaged;
+function setupHotReload() {
+  if (!HOT_RELOAD_ENABLED) return;
+  try {
+    const watchDir = path.join(__dirname, 'app');
+    let reloading = false;
+    let debounce = null;
+    const reloadRenderer = () => {
+      if (reloading) return;
+      reloading = true;
+      try { if (win && !win.isDestroyed()) win.webContents.reloadIgnoringCache(); } catch (e) {}
+      setTimeout(() => { reloading = false; }, 300);
+    };
+    const restartApp = () => {
+      try { app.relaunch(); app.exit(0); } catch (e) {}
+    };
+    const schedule = (kind) => {
+      clearTimeout(debounce);
+      debounce = setTimeout(kind === 'main' ? restartApp : reloadRenderer, 120);
+    };
+    // 渲染端目录
+    fs.watch(watchDir, { recursive: true }, (_evt, name) => {
+      if (!name) return;
+      // 跳过隐藏/临时文件
+      if (name.startsWith('.') || name.endsWith('~')) return;
+      schedule('renderer');
+    });
+    // 主进程与预加载
+    ['main.js', 'preload.js'].forEach((f) => {
+      try { fs.watch(path.join(__dirname, f), () => schedule('main')); } catch (e) {}
+    });
+    console.log('[hot-reload] watching', watchDir, 'and main/preload');
+  } catch (e) {
+    console.warn('[hot-reload] disabled:', e && e.message);
+  }
+}
+
 // 单实例
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -401,9 +449,10 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     // Windows 通知需要 AppUserModelID
-    app.setAppUserModelId('com.jarvis.calendar');
+    app.setAppUserModelId('com.desktodo.calendar');
     createWindow();
     createTray();
+    setupHotReload();
   });
 }
 
@@ -445,8 +494,8 @@ ipcMain.on('edge-hide', (_e, flag) => {
   }
 });
 // ---------- 本地数据文件(位置可自定义) ----------
-const CONFIG_PATH = path.join(app.getPath('userData'), 'jarvis-config.json');
-const DATA_FILENAME = 'jarvis-calendar-data.json';
+const CONFIG_PATH = path.join(app.getPath('userData'), 'desk-todo-config.json');
+const DATA_FILENAME = 'desk-todo-data.json';
 let dataDir = app.getPath('userData');
 
 function loadStorageConfig() {
@@ -511,7 +560,7 @@ ipcMain.handle('export-data', async (_e, content, filename) => {
   const res = await dialog.showSaveDialog(win, {
     title: '导出数据备份',
     defaultPath: filename,
-    filters: [{ name: '贾维斯日历备份', extensions: ['json'] }]
+filters: [{ name: '桌面日历备份', extensions: ['json'] }]
   });
   if (res.canceled || !res.filePath) return { ok: false, canceled: true };
   try {
@@ -524,7 +573,7 @@ ipcMain.handle('export-data', async (_e, content, filename) => {
 ipcMain.handle('import-data', async () => {
   const res = await dialog.showOpenDialog(win, {
     title: '导入数据备份',
-    filters: [{ name: '贾维斯日历备份', extensions: ['json'] }],
+    filters: [{ name: '桌面日历备份', extensions: ['json'] }],
     properties: ['openFile']
   });
   if (res.canceled || !res.filePaths.length) return { ok: false, canceled: true };

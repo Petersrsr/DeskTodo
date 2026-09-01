@@ -22,11 +22,11 @@
     aiMode: null,           // report | chat | todo
     aiBusy: false,
     data: {
-      lists: [{ id: 'default', name: '默认清单', color: '#4d8dff' }],
+      lists: [{ id: 'default', name: '默认清单', color: '#8aa68a' }],
       todos: [],   // {id, listId, title, note, date, time, quad, done, deleted, allDay, endDate, endTime, repeat, remind, notifiedOn, createdAt, doneAt}
       countdowns: [],
       aiHistory: { report: [], chat: [], todo: [] },
-      statusColors: { active: '#4d8dff', notstarted: '#38bde8', overdue: '#ffb35c', done: '#8b5cf6' },
+      statusColors: { active: '#8aa68a', notstarted: '#b8a890', overdue: '#c97864', done: '#5d7c5d' },
       wallpaper: 'aurora',
       opacity: 100,
       edgeHide: false,
@@ -36,19 +36,19 @@
   };
 
   // ---------- 存储 ----------
-  var STORE_KEY = 'xiaozhi-calendar-v2';
+  var STORE_KEY = 'desk-todo-v1';
   function normalizeData() {
     if (!state.data.lists || !state.data.lists.length) state.data.lists = [{ id: 'default', name: '默认清单' }];
     if (!state.data.lists.some(function (l) { return l.id === 'default'; })) {
       state.data.lists.unshift({ id: 'default', name: '默认清单' });
     }
-    state.data.lists.forEach(function (l) { if (!l.color) l.color = '#4d8dff'; });
+    state.data.lists.forEach(function (l) { if (!l.color) l.color = '#8aa68a'; });
     if (!state.data.aiHistory || typeof state.data.aiHistory !== 'object') state.data.aiHistory = {};
     ['report', 'chat', 'todo'].forEach(function (k) {
       if (!Array.isArray(state.data.aiHistory[k])) state.data.aiHistory[k] = [];
     });
     // 状态颜色默认值
-    var defColors = { active: '#4d8dff', notstarted: '#38bde8', overdue: '#ffb35c', done: '#8b5cf6' };
+    var defColors = { active: '#8aa68a', notstarted: '#b8a890', overdue: '#c97864', done: '#5d7c5d' };
     if (!state.data.statusColors || typeof state.data.statusColors !== 'object') state.data.statusColors = {};
     Object.keys(defColors).forEach(function (k) {
       if (!/^#[0-9a-fA-F]{6}$/.test(state.data.statusColors[k] || '')) state.data.statusColors[k] = defColors[k];
@@ -176,7 +176,7 @@
       if (state.view === 'todos' && !state.statusFilter && state.activeListId === l.id) div.classList.add('active');
 
       var icon = document.createElement('span'); icon.className = 'si-icon'; icon.textContent = '●';
-      icon.style.color = l.color || '#4d8dff';
+      icon.style.color = l.color || '#8aa68a';
       var name = document.createElement('span'); name.className = 'si-name'; name.textContent = l.name;
       var cnt = document.createElement('span'); cnt.className = 'si-count'; cnt.textContent = count;
       div.appendChild(icon); div.appendChild(name); div.appendChild(cnt);
@@ -1063,7 +1063,7 @@
       pushAiMsg('bot', '告诉我你的目标,我会拆解成待办并自动排好日期、避开已有日程。\n· "筹备年会"(默认从明天起排期)\n· "7月20日前完成毕业论文初稿"(按期限倒排)\n· "下周三下午交财报,帮我安排准备工作"');
     } else if (state.aiMode === 'chat' && !todaysChat().length) {
       // 每天新的开始:今天还没聊过就给个欢迎语(往期记录仍保留,点"聊天记录"可查看)
-      pushAiMsg('bot', '你好!我是贾维斯,可以直接帮你操作日历,试试对我说:\n· "明天下午3点提醒我去游泳"\n· "今天有什么安排?"\n· "游泳这条待办完成了"' + (state.data.apiKey ? '' : '\n(尚未配置 API Key,请点击右上角 ⚙ 设置)'));
+      pushAiMsg('bot', '你好!我是你的桌面助手,可以直接帮你操作日历,试试对我说:\n· "明天下午3点提醒我去游泳"\n· "今天有什么安排?"\n· "游泳这条待办完成了"' + (state.data.apiKey ? '' : '\n(尚未配置 API Key,请点击右上角 ⚙ 设置)'));
     }
   }
 
@@ -1114,7 +1114,7 @@
       item.className = 'asr-item';
       var who = document.createElement('span');
       who.className = 'asr-who ' + (mt.m.role === 'user' ? 'user' : 'bot');
-      who.textContent = mt.m.role === 'user' ? '我' : '贾维斯';
+      who.textContent = mt.m.role === 'user' ? '我' : '助手';
       var snip = document.createElement('span');
       snip.className = 'asr-snip';
       snip.appendChild(highlightSnippet(mt.m.text, kw));
@@ -1480,7 +1480,7 @@
     var now = new Date();
     var lunar = Lunar.solar2lunar(now);
     var weekCn = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
-    return '你是"贾维斯 AI 桌面日历"的内置中文助手,名叫贾维斯。今天是' +
+    return '你是"桌面日历"的内置中文助手。今天是' +
       now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 星期' + weekCn +
       (lunar ? ',农历' + lunar.monthCn + lunar.dayCn : '') +
       ',当前时间' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + '。\n' +
@@ -1493,7 +1493,7 @@
   function todoSysPrompt() {
     var now = new Date();
     var weekCn = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
-    return '你是"贾维斯 AI 桌面日历"的任务规划助手。今天是' +
+    return '你是"桌面日历"的任务规划助手。今天是' +
       now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 星期' + weekCn + '。\n' +
       '用户现有清单:' + state.data.lists.map(function (l) { return '「' + l.name + '」'; }).join('、') + '。\n' +
       '把用户的目标拆解为5-8条具体、可执行的待办,并调用add_todo逐条实际创建(用list参数选择内容最匹配的清单)。规则:\n' +
@@ -1725,7 +1725,7 @@
   }
 
   // ---------- 清单弹窗(新建/编辑,含颜色) ----------
-  var LIST_COLORS = ['#4d8dff', '#38bde8', '#2fbf71', '#ffb35c', '#ff5f5f', '#8b5cf6', '#f472b6', '#eab308'];
+  var LIST_COLORS = ['#8aa68a', '#a8c5a0', '#7fb069', '#d4a574', '#c97864', '#7d9d80', '#b8a890', '#5d7c5d'];
   var listModalColor = LIST_COLORS[0];
 
   function initListModal() {
@@ -1759,12 +1759,12 @@
   // ---------- 数据备份(导出/导入统一 JSON 格式) ----------
   function doExport() {
     var content = JSON.stringify({
-      app: 'jarvis-calendar',
+      app: 'desk-todo',
       version: 2,
       exportedAt: new Date().toISOString(),
       data: state.data
     }, null, 2);
-    var fname = '贾维斯日历备份-' + toInputDate(todayKey()) + '.json';
+    var fname = '桌面日历备份-' + toInputDate(todayKey()) + '.json';
     if (window.electronAPI && window.electronAPI.exportData) {
       window.electronAPI.exportData(content, fname).then(function (res) {
         if (res && res.ok) toast('已导出到:' + res.path);
@@ -1786,7 +1786,7 @@
     try { obj = JSON.parse(text); } catch (e) { toast('导入失败:文件格式错误'); return; }
     var d = obj && obj.data;
     if (!d || !Array.isArray(d.todos) || !Array.isArray(d.lists)) {
-      toast('导入失败:不是有效的贾维斯日历备份文件'); return;
+      toast('导入失败:不是有效的桌面日历备份文件'); return;
     }
     if (!confirm('导入将覆盖当前全部数据(备份含 ' + d.todos.length + ' 条待办、' +
       d.lists.length + ' 个清单),确定继续?')) return;
