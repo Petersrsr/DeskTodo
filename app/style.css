@@ -83,6 +83,7 @@ body[data-wp="dark"] #wallpaper {
   width: 34px; height: 28px;
   border: none; background: transparent; color: var(--text-sub);
   border-radius: 7px; cursor: pointer; font-size: 13px;
+  transition: background .15s ease, color .15s ease, transform .22s ease;
 }
 .tb-btn:hover { background: var(--glass-hover); color: var(--text); }
 .tb-close:hover { background: #e04545; color: #fff; }
@@ -99,8 +100,38 @@ body[data-wp="dark"] #wallpaper {
   border-right: 1px solid var(--border);
   padding: 10px 8px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex; flex-direction: column; gap: 4px;
+  transition: width .22s ease;
 }
+/* 折叠态:仅图标列,文本/计数/操作按钮全部隐藏 */
+body.sidebar-collapsed #sidebar {
+  width: 52px;
+  padding: 10px 4px;
+}
+body.sidebar-collapsed #sidebar .si-name,
+body.sidebar-collapsed #sidebar .si-count,
+body.sidebar-collapsed #sidebar .side-header,
+body.sidebar-collapsed #sidebar .side-plus {
+  display: none !important;
+}
+body.sidebar-collapsed #sidebar .side-item {
+  padding: 8px 6px;
+  justify-content: center;
+  gap: 0;
+}
+body.sidebar-collapsed #sidebar .side-item.sub {
+  padding-left: 6px;
+}
+body.sidebar-collapsed #sidebar .si-icon { width: auto; font-size: 16px; }
+body.sidebar-collapsed #sidebar .side-item.active::before { display: none; }
+body.sidebar-collapsed #sidebar .list-del { display: none !important; }
+body.sidebar-collapsed #sidebar::-webkit-scrollbar { width: 0; }
+/* 折叠态下左侧贴边 active 指示用色块代替条带 */
+body.sidebar-collapsed #sidebar .side-item.active { background: var(--primary); color: #fff; }
+body.sidebar-collapsed #sidebar .side-item.active:hover { background: var(--primary); }
+/* 折叠按钮在折叠后旋转箭头方向 */
+body.sidebar-collapsed #btn-sidebar-toggle { transform: rotate(180deg); }
 .side-group { padding-bottom: 4px; }
 .side-header, .side-item {
   display: flex; align-items: center; gap: 9px;

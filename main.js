@@ -19,7 +19,8 @@ let edgeHide = false;   // 是否开启靠边自动隐藏
 let docked = null;      // 'top' | 'left' | 'right' | null
 let dockDisplayId = null; // 贴靠时锁定的显示器 id,隐藏/弹出都用它计算(多屏一致)
 let edgeHidden = false; // 当前是否已缩到边缘
-let pinned = false;     // 用户置顶状态
+let pinned = false;     // 用户置顶状态(已废弃,保留兼容旧 IPC)
+let pinToDesktop = false; // 钉在桌面:窗口位于 z 最底层,被其他应用覆盖但始终在桌面上
 let moveTimer = null;
 let ignoreMove = false; // 程序自身移动窗口时忽略 move 事件
 let pollTimer = null;
@@ -162,7 +163,8 @@ function onMoved() {
     const p = dockAlignedPos();
     setPos(p.x, p.y);
   }
-  win.setAlwaysOnTop(docked ? true : pinned);
+  // 钉桌面时不动 z 顺序(由 pinToDesktop 控制)
+  if (!pinToDesktop) win.setAlwaysOnTop(docked ? true : pinned);
 }
 
 function setPos(x, y) {
@@ -181,8 +183,9 @@ function hideToEdge() {
   edgeHidden = true;
   edgeDwell = 0;
   // 隐藏后:取消置顶 + 主动压到 z 轴最底层,露出的边条位于所有其他软件底下,不再遮挡/误触
+  // (钉桌面模式下不需要 sendToBottom,因为窗口已经在最底)
   win.setAlwaysOnTop(false);
-  sendToBottom();
+  if (!pinToDesktop) sendToBottom();
 }
 
 // 停靠边对齐屏幕边线,另一方向整体收进屏幕内(贴角落时不再切掉内容)
@@ -206,8 +209,11 @@ function dockAlignedPos() {
 function showFromEdge(focusIt) {
   if (!edgeHidden || !docked) return;
   // 弹出时升到最前并置顶,盖过其他软件
-  win.setAlwaysOnTop(true);
-  win.moveTop();
+  // (钉桌面模式下保持钉在桌面,不升到最前;由用户取消钉桌面才会拉起)
+  if (!pinToDesktop) {
+    win.setAlwaysOnTop(true);
+    win.moveTop();
+  }
   const p = dockAlignedPos();
   setPos(p.x, p.y);
   edgeHidden = false;
@@ -278,7 +284,11 @@ function stopPoll() {
   stopZHelper();
 }
 
-// ---- 层级助手进程:阻塞读 stdin,每收到一个 hwnd 就把它压到 z 轴最底层(HWND_BOTTOM) ----
+// ---- 层级助手进程:阻塞读 stdin,接收 "cmd:hwnd" 格式指令 ----
+// b = SetWindowPos HWND_BOTTOM(钉到桌面,位于最底层但仍在桌面壁纸之上)
+// t = SetWindowPos HWND_TOP(取消钉桌面时拉回最前)
+// n = 添加 WS_EX_NOACTIVATE(钉桌面时点击不抢焦点,避免破坏其他应用焦点)
+// a = 移除 WS_EX_NOACTIVATE(取消钉桌面时还原)
 let zHelper = null;
 function startZHelper() {
   if (zHelper) return;
@@ -288,16 +298,34 @@ using System;
 using System.Runtime.InteropServices;
 public class ZO {
   [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int X, int Y, int cx, int cy, uint flags);
+  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr h, int nIndex);
+  [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr h, int nIndex, int dwNewLong);
+  public const int GWL_EXSTYLE = -20;
+  public const int WS_EX_NOACTIVATE = 0x08000000;
 }
 "@
-$BOTTOM = [IntPtr]1
 $FLAGS = [uint32](0x0001 -bor 0x0002 -bor 0x0010)  # SWP_NOSIZE|SWP_NOMOVE|SWP_NOACTIVATE
 while ($true) {
   $line = [Console]::In.ReadLine()
   if ($line -eq $null) { break }
   $line = $line.Trim()
   if ($line -ne '') {
-    try { [ZO]::SetWindowPos([IntPtr][int64]$line, $BOTTOM, 0, 0, 0, 0, $FLAGS) | Out-Null } catch {}
+    try {
+      $p = $line.Split(':')
+      $cmd = $p[0]
+      $h = [IntPtr][int64]$p[1]
+      if ($cmd -eq 'b') {
+        [ZO]::SetWindowPos($h, [IntPtr]1, 0, 0, 0, 0, $FLAGS) | Out-Null
+      } elseif ($cmd -eq 't') {
+        [ZO]::SetWindowPos($h, [IntPtr]0, 0, 0, 0, 0, $FLAGS) | Out-Null
+      } elseif ($cmd -eq 'n') {
+        $s = [ZO]::GetWindowLong($h, [ZO]::GWL_EXSTYLE)
+        [ZO]::SetWindowLong($h, [ZO]::GWL_EXSTYLE, $s -bor [ZO]::WS_EX_NOACTIVATE) | Out-Null
+      } elseif ($cmd -eq 'a') {
+        $s = [ZO]::GetWindowLong($h, [ZO]::GWL_EXSTYLE)
+        [ZO]::SetWindowLong($h, [ZO]::GWL_EXSTYLE, $s -band (-bnot [ZO]::WS_EX_NOACTIVATE)) | Out-Null
+      }
+    } catch {}
   }
 }
 `;
@@ -312,10 +340,19 @@ while ($true) {
 function stopZHelper() {
   if (zHelper) { try { zHelper.kill(); } catch (e) {} zHelper = null; }
 }
-// 把日历窗口压到所有窗口最底层
 function sendToBottom() {
   if (zHelper && zHelper.stdin.writable && myHwnd !== null) {
-    try { zHelper.stdin.write(myHwnd.toString() + '\n'); } catch (e) {}
+    try { zHelper.stdin.write('b:' + myHwnd.toString() + '\n'); } catch (e) {}
+  }
+}
+function bringToTop() {
+  if (zHelper && zHelper.stdin.writable && myHwnd !== null) {
+    try { zHelper.stdin.write('t:' + myHwnd.toString() + '\n'); } catch (e) {}
+  }
+}
+function setNoActivate(flag) {
+  if (zHelper && zHelper.stdin.writable && myHwnd !== null) {
+    try { zHelper.stdin.write((flag ? 'n:' : 'a:') + myHwnd.toString() + '\n'); } catch (e) {}
   }
 }
 
@@ -377,7 +414,7 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('桌面日历');
   const menu = Menu.buildFromTemplate([
-    { label: '显示日历', click: () => { if (edgeHidden) showFromEdge(); win.show(); win.focus(); } },
+    { label: '显示日历', click: () => { if (edgeHidden) showFromEdge(); if (pinToDesktop) applyPinToDesktop(); win.show(); win.focus(); } },
     {
       label: '重置窗口位置', click: () => {
         const wa = screen.getPrimaryDisplay().workArea;
@@ -385,7 +422,7 @@ function createTray() {
         edgeHidden = false;
         docked = null;
         dockDisplayId = null;
-        win.setAlwaysOnTop(pinned);
+        if (!pinToDesktop) win.setAlwaysOnTop(pinned);
         setPos(wa.x + Math.round((wa.width - b.width) / 2), wa.y + Math.round((wa.height - b.height) / 2));
         win.show();
         win.focus();
@@ -469,20 +506,41 @@ app.on('before-quit', () => {
 // ---------- IPC ----------
 ipcMain.on('win-minimize', () => win && win.minimize());
 ipcMain.on('win-hide', () => win && win.hide());
+// 钉在桌面:窗口位于 z 最底层(被其他应用覆盖),不抢焦点;适合低透明度 + 折叠侧栏做桌面小组件
+function applyPinToDesktop() {
+  if (!win || win.isDestroyed()) return;
+  if (pinToDesktop) {
+    // 1) 先确保不再 always-on-top;2) 再压到 z 最底层;3) 加 WS_EX_NOACTIVATE 让点击不抢焦点
+    win.setAlwaysOnTop(false);
+    sendToBottom();
+    setNoActivate(true);
+  } else {
+    // 恢复:去掉 NOACTIVATE,拉回正常 z 顺序
+    setNoActivate(false);
+    bringToTop();
+    // 还原原有的"置顶"或普通状态
+    win.setAlwaysOnTop(docked ? true : pinned);
+  }
+}
+ipcMain.on('set-pin-to-desktop', (_e, flag) => {
+  pinToDesktop = !!flag;
+  applyPinToDesktop();
+});
+// 旧置顶接口保留兼容(若旧客户端调用,降级为普通"取消钉桌面")
 ipcMain.on('win-pin', (_e, flag) => {
   pinned = !!flag;
-  // 已隐藏到边缘时保持在底层,不因置顶切换把边条拉回最前
-  if (win) win.setAlwaysOnTop(edgeHidden ? false : (docked ? true : pinned));
+  if (win && !pinToDesktop) win.setAlwaysOnTop(docked ? true : pinned);
 });
 ipcMain.on('edge-hide', (_e, flag) => {
   edgeHide = !!flag;
   if (!win) return;
+  // 钉在桌面时不让 edge-hide 接管 z 顺序(z 由 pin-to-desktop 决定,这里只管贴靠定位)
   if (edgeHide) {
     // 开启时若窗口已在某屏外侧边缘,直接进入贴靠(锁定该显示器)
     const disp = screen.getDisplayMatching(win.getBounds());
     docked = detectEdgeOn(disp);
     dockDisplayId = docked ? disp.id : null;
-    if (docked) win.setAlwaysOnTop(true);
+    if (docked && !pinToDesktop) win.setAlwaysOnTop(true);
     startPoll();
   } else {
     if (edgeHidden) showFromEdge();
@@ -490,7 +548,7 @@ ipcMain.on('edge-hide', (_e, flag) => {
     dockDisplayId = null;
     edgeHidden = false;
     stopPoll();
-    win.setAlwaysOnTop(pinned);
+    if (!pinToDesktop) win.setAlwaysOnTop(pinned);
   }
 });
 // ---------- 本地数据文件(位置可自定义) ----------

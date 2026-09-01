@@ -30,7 +30,9 @@
       wallpaper: 'aurora',
       opacity: 100,
       edgeHide: false,
-      pinned: false,
+      pinned: false,             // 旧字段保留兼容(自动迁移到 pinToDesktop)
+      pinToDesktop: false,       // 钉在桌面:窗口位于 z 最底层,被其他应用覆盖但始终在桌面上
+      sidebarCollapsed: false,   // 侧栏折叠态
       apiKey: ''
     }
   };
@@ -58,6 +60,9 @@
       t.deleted = t.deleted === true;
       t.done = t.done === true;
     });
+    // 新字段默认值(老版本数据没有时补上)
+    if (typeof state.data.pinToDesktop !== 'boolean') state.data.pinToDesktop = false;
+    if (typeof state.data.sidebarCollapsed !== 'boolean') state.data.sidebarCollapsed = false;
   }
 
   function applyRaw(raw) {
@@ -111,6 +116,14 @@
   }
 
   // ---------- 视图切换 ----------
+  function applySidebarCollapsed() {
+    document.body.classList.toggle('sidebar-collapsed', !!state.data.sidebarCollapsed);
+    var btn = $('#btn-sidebar-toggle');
+    if (btn) {
+      btn.textContent = state.data.sidebarCollapsed ? '▶' : '◀';
+      btn.title = state.data.sidebarCollapsed ? '展开侧栏' : '收起侧栏';
+    }
+  }
   function switchView(view) {
     state.view = view;
     $all('.side-item').forEach(function (el) {
@@ -1799,9 +1812,15 @@
     state.activeListId = 'default';
     applyWallpaper();
     applyEdgeHide();
-    if (state.data.pinned) $('#btn-pin').classList.add('active');
-    else $('#btn-pin').classList.remove('active');
-    if (window.electronAPI && window.electronAPI.setPin) window.electronAPI.setPin(!!state.data.pinned);
+    if (state.data.pinToDesktop) {
+      $('#btn-pin').classList.add('active');
+      if (window.electronAPI && window.electronAPI.setPinToDesktop) window.electronAPI.setPinToDesktop(true);
+    } else {
+      $('#btn-pin').classList.remove('active');
+      if (window.electronAPI && window.electronAPI.setPinToDesktop) window.electronAPI.setPinToDesktop(false);
+      if (window.electronAPI && window.electronAPI.setPin) window.electronAPI.setPin(!!state.data.pinned);
+    }
+    applySidebarCollapsed();
     closeModals();
     refreshAll();
     toast('导入成功');
@@ -2272,11 +2291,18 @@
 
     // 窗口控制
     $('#btn-pin').addEventListener('click', function () {
-      state.data.pinned = !state.data.pinned;
+      state.data.pinToDesktop = !state.data.pinToDesktop;
       save();
-      this.classList.toggle('active', state.data.pinned);
-      if (window.electronAPI && window.electronAPI.setPin) window.electronAPI.setPin(state.data.pinned);
-      toast(state.data.pinned ? '窗口已置顶' : '已取消置顶');
+      this.classList.toggle('active', state.data.pinToDesktop);
+      if (window.electronAPI && window.electronAPI.setPinToDesktop) window.electronAPI.setPinToDesktop(state.data.pinToDesktop);
+      toast(state.data.pinToDesktop
+        ? '已钉在桌面:窗口位于最底层,可低透明度放在桌面角落作为小组件'
+        : '已取消钉在桌面:恢复正常窗口层级');
+    });
+    $('#btn-sidebar-toggle').addEventListener('click', function () {
+      state.data.sidebarCollapsed = !state.data.sidebarCollapsed;
+      save();
+      applySidebarCollapsed();
     });
     $('#btn-min').addEventListener('click', function () {
       if (window.electronAPI && window.electronAPI.minimize) window.electronAPI.minimize();
@@ -2351,10 +2377,14 @@
     renderSidebar();
     switchView('todos');
 
-    if (state.data.pinned) {
+    if (state.data.pinToDesktop) {
       $('#btn-pin').classList.add('active');
-      if (window.electronAPI && window.electronAPI.setPin) window.electronAPI.setPin(true);
+      if (window.electronAPI && window.electronAPI.setPinToDesktop) window.electronAPI.setPinToDesktop(true);
+    } else if (state.data.pinned && window.electronAPI && window.electronAPI.setPin) {
+      // 兼容旧数据:老版本曾开启"置顶",现在升级为新模型(默认关闭钉桌面,但调用旧接口保留其原行为)
+      window.electronAPI.setPin(true);
     }
+    applySidebarCollapsed();
     applyEdgeHide();
 
     setInterval(checkReminders, 20000);
