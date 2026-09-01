@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setPin: (flag) => ipcRenderer.send('win-pin', flag),
   setPinToDesktop: (flag) => ipcRenderer.send('set-pin-to-desktop', flag),
   setEdgeHide: (flag) => ipcRenderer.send('edge-hide', flag),
+  getAutoStart: () => ipcRenderer.invoke('get-auto-start'),
+  setAutoStart: (payload) => ipcRenderer.send('set-auto-start', payload),
   notify: (title, body) => ipcRenderer.send('notify', title, body),
   exportData: (content, filename) => ipcRenderer.invoke('export-data', content, filename),
   importData: () => ipcRenderer.invoke('import-data'),

@@ -557,6 +557,7 @@ body.sidebar-collapsed #btn-sidebar-toggle { transform: rotate(180deg); }
 .modal label select option { background: #1c2330; }
 .check-label { user-select: none; cursor: pointer; }
 .check-label input { accent-color: var(--primary); }
+.check-label input:disabled { opacity: .45; cursor: not-allowed; }
 .modal label input[type="range"] { flex: 1; accent-color: var(--primary); padding: 0; }
 .opacity-val { width: 42px; text-align: right; color: var(--text); font-size: 13px; }
 #list-colors { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }

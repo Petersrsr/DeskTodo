@@ -34,6 +34,10 @@ let mouseDown = false;  // 鼠标左键是否按下(用于判断是否仍在拖�
 let myHwnd = null;
 const DESKTOP_CLASSES = ['Progman', 'WorkerW', 'Shell_TrayWnd', 'Shell_SecondaryTrayWnd'];
 
+// 启动参数:--hidden 由 setLoginItemSettings({openAsHidden:true}) 自动注入,
+// 也允许用户手动加 --hidden 启动;命中后主窗口不在任务栏显示,也不弹窗
+const startedHidden = process.argv.includes('--hidden');
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1060,
@@ -42,6 +46,8 @@ function createWindow() {
     minHeight: 560,
     frame: false,
     transparent: true,
+    skipTaskbar: true,        // 始终不在 Windows 任务栏显示,只在托盘
+    show: !startedHidden,     // --hidden 启动时直接隐藏,只留托盘
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -506,6 +512,45 @@ app.on('before-quit', () => {
 // ---------- IPC ----------
 ipcMain.on('win-minimize', () => win && win.minimize());
 ipcMain.on('win-hide', () => win && win.hide());
+
+// ---------- 开机自启 ----------
+// Windows:写入 HKCU\...\Run;macOS:登录项;Linux:.desktop autostart
+// openAsHidden=true 会让 OS 在登录时以 --hidden 启动,主窗口直接隐藏只留托盘
+function applyAutoStart(openAtLogin, openAsHidden) {
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: !!openAtLogin,
+      openAsHidden: !!openAsHidden,
+      // path 默认 process.execPath(打包版即 桌面日历.exe);开发态指向 electron.exe
+    });
+    return true;
+  } catch (e) {
+    console.warn('[auto-start] setLoginItemSettings failed:', e && e.message);
+    return false;
+  }
+}
+ipcMain.handle('get-auto-start', () => {
+  try {
+    const s = app.getLoginItemSettings();
+    return {
+      openAtLogin: !!s.openAtLogin,
+      openAsHidden: !!s.openAsHidden,
+      // wasOpenedAtLogin / wasOpenedAsHidden: 进程是否被登录启动触发(用于诊断)
+      wasOpenedAtLogin: !!s.wasOpenedAtLogin,
+      wasOpenedAsHidden: !!s.wasOpenedAsHidden
+    };
+  } catch (e) {
+    return { openAtLogin: false, openAsHidden: false, wasOpenedAtLogin: false, wasOpenedAsHidden: false };
+  }
+});
+ipcMain.on('set-auto-start', (_e, payload) => {
+  if (payload && typeof payload === 'object') {
+    applyAutoStart(payload.openAtLogin, payload.openAsHidden);
+  } else {
+    // 兼容旧的布尔参数
+    applyAutoStart(!!payload, false);
+  }
+});
 // 钉在桌面:窗口位于 z 最底层(被其他应用覆盖),不抢焦点;适合低透明度 + 折叠侧栏做桌面小组件
 function applyPinToDesktop() {
   if (!win || win.isDestroyed()) return;

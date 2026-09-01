@@ -33,6 +33,8 @@
       pinned: false,             // 旧字段保留兼容(自动迁移到 pinToDesktop)
       pinToDesktop: false,       // 钉在桌面:窗口位于 z 最底层,被其他应用覆盖但始终在桌面上
       sidebarCollapsed: false,   // 侧栏折叠态
+      autoStart: false,          // 开机自启(写入 Windows 注册表 Run)
+      startHidden: false,        // 自启动时仅在后台托盘显示(--hidden)
       apiKey: ''
     }
   };
@@ -63,6 +65,8 @@
     // 新字段默认值(老版本数据没有时补上)
     if (typeof state.data.pinToDesktop !== 'boolean') state.data.pinToDesktop = false;
     if (typeof state.data.sidebarCollapsed !== 'boolean') state.data.sidebarCollapsed = false;
+    if (typeof state.data.autoStart !== 'boolean') state.data.autoStart = false;
+    if (typeof state.data.startHidden !== 'boolean') state.data.startHidden = false;
   }
 
   function applyRaw(raw) {
@@ -2219,6 +2223,19 @@
       $('#set-opacity').value = state.data.opacity || 100;
       $('#set-opacity-val').textContent = (state.data.opacity || 100) + '%';
       $('#set-edge').value = state.data.edgeHide ? 'on' : 'off';
+      $('#set-autostart').checked = !!state.data.autoStart;
+      $('#set-start-hidden').checked = !!state.data.startHidden;
+      // 开机自启的"真相"在 Windows 注册表,以它为准同步 UI
+      if (window.electronAPI && window.electronAPI.getAutoStart) {
+        window.electronAPI.getAutoStart().then(function (s) {
+          state.data.autoStart = !!s.openAtLogin;
+          state.data.startHidden = !!s.openAsHidden;
+          $('#set-autostart').checked = state.data.autoStart;
+          $('#set-start-hidden').checked = state.data.startHidden;
+          // "仅后台显示"必须先开"开机自启"才有意义
+          $('#set-start-hidden').disabled = !state.data.autoStart;
+        });
+      }
       $('#sc-active').value = state.data.statusColors.active;
       $('#sc-notstarted').value = state.data.statusColors.notstarted;
       $('#sc-overdue').value = state.data.statusColors.overdue;
@@ -2233,6 +2250,32 @@
         $('#btn-choose-dir').disabled = true;
       }
       showModal('settings-modal');
+    });
+    // 关闭"开机自启"时连带禁用"仅后台显示"
+    $('#set-autostart').addEventListener('change', function () {
+      state.data.autoStart = this.checked;
+      $('#set-start-hidden').disabled = !this.checked;
+      if (!this.checked) {
+        state.data.startHidden = false;
+        $('#set-start-hidden').checked = false;
+      }
+      save();
+      if (window.electronAPI && window.electronAPI.setAutoStart) {
+        window.electronAPI.setAutoStart({
+          openAtLogin: state.data.autoStart,
+          openAsHidden: state.data.startHidden
+        });
+      }
+    });
+    $('#set-start-hidden').addEventListener('change', function () {
+      state.data.startHidden = this.checked;
+      save();
+      if (window.electronAPI && window.electronAPI.setAutoStart) {
+        window.electronAPI.setAutoStart({
+          openAtLogin: state.data.autoStart,
+          openAsHidden: state.data.startHidden
+        });
+      }
     });
     // 更改数据保存位置(自动搬移数据文件)
     $('#btn-choose-dir').addEventListener('click', function () {
@@ -2386,6 +2429,16 @@
     }
     applySidebarCollapsed();
     applyEdgeHide();
+
+    // 启动时以注册表为准同步"开机自启/仅后台显示",防止 state.data 与系统状态偏离
+    if (window.electronAPI && window.electronAPI.getAutoStart) {
+      window.electronAPI.getAutoStart().then(function (s) {
+        var changed = (!!s.openAtLogin) !== state.data.autoStart || (!!s.openAsHidden) !== state.data.startHidden;
+        state.data.autoStart = !!s.openAtLogin;
+        state.data.startHidden = !!s.openAsHidden;
+        if (changed) save();
+      });
+    }
 
     setInterval(checkReminders, 20000);
     setInterval(checkDayChange, 60000);
