@@ -4,13 +4,54 @@
   "version": "1.0.0",
   "description": "桌面日历 - 待办、日程、四象限、倒计时与 AI 助手的桌面效率工具",
   "main": "main.js",
+  "author": "Petersrsr",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dev": "electron ."
+    "dev": "electron .",
+    "build": "electron-builder --win --x64",
+    "build:dir": "electron-builder --win --x64 --dir"
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.desktodo.calendar",
+    "productName": "桌面日历",
+    "copyright": "Copyright © 2026 Petersrsr",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "桌面日历",
+      "installerLanguages": ["zh_CN", "en_US"],
+      "language": "2052",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
